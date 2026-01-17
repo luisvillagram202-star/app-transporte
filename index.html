@@ -2,155 +2,132 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>App Transporte</title>
+  <title>App Transporte Escolar</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    input { margin-bottom: 5px; }
+    hr { margin: 20px 0; }
+  </style>
 </head>
 <body>
 
-<h1>Login Firebase</h1>
+<h1>App Transporte Escolar</h1>
 
-<input type="email" id="email" placeholder="Correo"><br><br>
-<input type="password" id="password" placeholder="Contraseña"><br><br>
+<!-- LOGIN -->
+<div id="loginDiv">
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Correo"><br>
+  <input type="password" id="password" placeholder="Contraseña"><br>
+  <button id="loginBtn">Ingresar</button>
+  <p id="estadoLogin">Esperando acción…</p>
+</div>
 
-<button id="loginBtn">Ingresar</button>
-
-<p id="estado">Esperando acción…</p>
-  <hr>
-
-<h2>Horario del estudiante</h2>
-
-<input type="time" id="entrada"><br><br>
-<input type="time" id="salida"><br><br>
-
-<button id="guardarHorario">Guardar horario</button>
-
-<!-- PANEL PADRE -->
-<div id="horarioPadre">
-  <h3>Horario del estudiante</h3>
-
-  <label>Hora de entrada</label><br>
-  <input type="time" id="entrada"><br><br>
-
-  <label>Hora de salida</label><br>
-  <input type="time" id="salida"><br><br>
-
+<!-- PADRE: formulario horarios -->
+<div id="padreDiv" class="hidden">
+  <h2>Horario del estudiante</h2>
+  <input type="time" id="entrada"><br>
+  <input type="time" id="salida"><br>
   <button id="guardarHorario">Guardar horario</button>
-
   <p id="estadoHorario"></p>
 </div>
 
-<!-- PANEL TRANSPORTISTA -->
-<div id="panelTransportista" style="display:none">
-  <h3>Horarios de estudiantes</h3>
+<!-- TRANSPORTISTA: ver horarios -->
+<div id="transportistaDiv" class="hidden">
+  <h2>Horarios de todos los estudiantes</h2>
   <ul id="listaHorarios"></ul>
 </div>
-
-
-
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+  // 🔹 Pega aquí tu config
   const firebaseConfig = {
-  apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
-  authDomain: "app-transporte-25487.firebaseapp.com",
-  projectId: "app-transporte-25487",
-  storageBucket: "app-transporte-25487.firebasestorage.app",
-  messagingSenderId: "818710436467",
-  appId: "1:818710436467:web:06fc21171780afca7a6806"
-};
+    apiKey: "PEGA_AQUI",
+    authDomain: "PEGA_AQUI",
+    projectId: "PEGA_AQUI",
+    appId: "PEGA_AQUI"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  const estado = document.getElementById("estado");
-  const loginBtn = document.getElementById("loginBtn");
+  const loginDiv = document.getElementById("loginDiv");
+  const padreDiv = document.getElementById("padreDiv");
+  const transportistaDiv = document.getElementById("transportistaDiv");
 
-  loginBtn.addEventListener("click", async () => {
-    estado.innerText = "Procesando login...";
+  const estadoLogin = document.getElementById("estadoLogin");
+
+  // LOGIN
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    estadoLogin.innerText = "Procesando login...";
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
     try {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
 
-      const ref = doc(db, "users", uid);
-      const snap = await getDoc(ref);
+      // Revisar rol
+      const userRef = doc(db, "users", uid);
+      const snap = await getDoc(userRef);
 
+      let rol;
       if (!snap.exists()) {
-        await setDoc(ref, { rol: "padre" });
-        estado.innerText = "Usuario creado como PADRE";
+        // Por defecto: PADRE
+        rol = "padre";
+        await setDoc(userRef, { rol });
+        estadoLogin.innerText = "Usuario creado como PADRE";
       } else {
-        estado.innerText = "Bienvenido " + snap.data().rol;
+        rol = snap.data().rol;
+        estadoLogin.innerText = "Bienvenido " + rol;
+      }
+
+      // Mostrar UI según rol
+      loginDiv.classList.add("hidden");
+      if (rol === "padre") {
+        padreDiv.classList.remove("hidden");
+      } else if (rol === "transportista") {
+        transportistaDiv.classList.remove("hidden");
+        cargarHorarios();
       }
 
     } catch (e) {
-      estado.innerText = e.message;
+      estadoLogin.innerText = e.message;
     }
   });
-  
-const guardarBtn = document.getElementById("guardarHorario");
-const estadoHorario = document.getElementById("estadoHorario");
 
-guardarBtn.addEventListener("click", async () => {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      estadoHorario.innerText = "Debes iniciar sesión primero";
-      return;
+  // PADRE: guardar horarios
+  document.getElementById("guardarHorario").addEventListener("click", async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const entrada = document.getElementById("entrada").value;
+      const salida = document.getElementById("salida").value;
+
+      await setDoc(doc(db, "horarios", user.uid), { entrada, salida });
+      document.getElementById("estadoHorario").innerText = "Horario guardado correctamente";
+    } catch (e) {
+      document.getElementById("estadoHorario").innerText = e.message;
     }
+  });
 
-    const entrada = document.getElementById("entrada").value;
-    const salida = document.getElementById("salida").value;
-
-    await setDoc(doc(db, "horarios", user.uid), {
-      entrada,
-      salida
+  // TRANSPORTISTA: ver todos los horarios
+  async function cargarHorarios() {
+    const lista = document.getElementById("listaHorarios");
+    lista.innerHTML = "";
+    const querySnapshot = await getDocs(collection(db, "horarios"));
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const li = document.createElement("li");
+      li.innerText = `UID: ${doc.id} - Entrada: ${data.entrada}, Salida: ${data.salida}`;
+      lista.appendChild(li);
     });
-
-    estadoHorario.innerText = "Horario guardado correctamente";
-  } catch (e) {
-    estadoHorario.innerText = e.message;
   }
-});
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const horarioPadre = document.getElementById("horarioPadre");
-const panelTransportista = document.getElementById("panelTransportista");
-const listaHorarios = document.getElementById("listaHorarios");
-
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-
-  const userDoc = await getDoc(doc(db, "usuarios", user.uid));
-
-  // OCULTAR TODO
-  horarioPadre.style.display = "none";
-  panelTransportista.style.display = "none";
-
-  if (userDoc.exists() && userDoc.data().rol === "transportista") {
-    panelTransportista.style.display = "block";
-
-    onSnapshot(collection(db, "horarios"), (snapshot) => {
-      listaHorarios.innerHTML = "";
-      snapshot.forEach(d => {
-        const h = d.data();
-        listaHorarios.innerHTML += `
-          <li>Entrada: ${h.entrada} | Salida: ${h.salida}</li>
-        `;
-      });
-    });
-
-  } else {
-    horarioPadre.style.display = "block";
-  }
-});
-
 </script>
 
 </body>
