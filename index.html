@@ -17,21 +17,16 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
-  apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
-  authDomain: "app-transporte-25487.firebaseapp.com",
-  projectId: "app-transporte-25487",
-  storageBucket: "app-transporte-25487.firebasestorage.app",
-  messagingSenderId: "818710436467",
-  appId: "1:818710436467:web:06fc21171780afca7a6806"
-};
+    apiKey: "PEGA_AQUI",
+    authDomain: "PEGA_AQUI",
+    projectId: "PEGA_AQUI",
+    appId: "PEGA_AQUI"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
-
 
   document.getElementById("login").onclick = () => {
     signInWithEmailAndPassword(
@@ -39,15 +34,10 @@
       email.value,
       password.value
     )
-    ..then(async (userCredential) => {
-  const uid = userCredential.user.uid;
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
+    .then(() => estado.innerText = "Login correcto")
+    .catch(e => estado.innerText = e.message);
+  };
+</script>
 
-  if (!snap.exists()) {
-    await setDoc(ref, { rol: "padre" });
-    estado.innerText = "Usuario creado como PADRE";
-  } else {
-    estado.innerText = "Bienvenido " + snap.data().rol;
-  }
-})
+</body>
+</html>
