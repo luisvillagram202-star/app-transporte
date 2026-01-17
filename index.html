@@ -26,6 +26,7 @@
 <!-- PADRE: formulario horarios -->
 <div id="padreDiv" class="hidden">
   <h2>Horario del estudiante</h2>
+  <input type="text" id="nombreHijo" placeholder="Nombre del hijo"><br>
   <input type="time" id="entrada"><br>
   <input type="time" id="salida"><br>
   <button id="guardarHorario">Guardar horario</button>
@@ -43,6 +44,7 @@
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+  // 🔹 Configura tu Firebase
   const firebaseConfig = {
   apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
   authDomain: "app-transporte-25487.firebaseapp.com",
@@ -50,12 +52,13 @@
   storageBucket: "app-transporte-25487.firebasestorage.app",
   messagingSenderId: "818710436467",
   appId: "1:818710436467:web:06fc21171780afca7a6806"
-};;
+};
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Divs
   const loginDiv = document.getElementById("loginDiv");
   const padreDiv = document.getElementById("padreDiv");
   const transportistaDiv = document.getElementById("transportistaDiv");
@@ -97,23 +100,30 @@
     }
   });
 
-  // PADRE: guardar horarios
+  // PADRE: guardar horarios con nombre del hijo
   document.getElementById("guardarHorario").addEventListener("click", async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
 
+      const nombreHijo = document.getElementById("nombreHijo").value.trim();
       const entrada = document.getElementById("entrada").value;
       const salida = document.getElementById("salida").value;
 
-      await setDoc(doc(db, "horarios", user.uid), { entrada, salida });
+      if (!nombreHijo) {
+        document.getElementById("estadoHorario").innerText = "Ingresa el nombre del hijo";
+        return;
+      }
+
+      await setDoc(doc(db, "horarios", user.uid), { nombreHijo, entrada, salida });
       document.getElementById("estadoHorario").innerText = "Horario guardado correctamente";
+
     } catch (e) {
       document.getElementById("estadoHorario").innerText = e.message;
     }
   });
 
-  // Transportista: ver horarios en tiempo real
+  // TRANSPORTISTA: ver horarios en tiempo real
   function cargarHorariosRealtime() {
     const lista = document.getElementById("listaHorarios");
     const colRef = collection(db, "horarios");
@@ -123,7 +133,7 @@
       snapshot.forEach((doc) => {
         const data = doc.data();
         const li = document.createElement("li");
-        li.innerText = `UID: ${doc.id} - Entrada: ${data.entrada}, Salida: ${data.salida}`;
+        li.innerText = `${data.nombreHijo} - Entrada: ${data.entrada}, Salida: ${data.salida}`;
         lista.appendChild(li);
       });
     });
@@ -133,4 +143,3 @@
 
 </body>
 </html>
-
