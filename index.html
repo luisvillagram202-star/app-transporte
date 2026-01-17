@@ -41,9 +41,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 🔹 Configura tu Firebase
   const firebaseConfig = {
   apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
   authDomain: "app-transporte-25487.firebaseapp.com",
@@ -51,17 +50,15 @@
   storageBucket: "app-transporte-25487.firebasestorage.app",
   messagingSenderId: "818710436467",
   appId: "1:818710436467:web:06fc21171780afca7a6806"
-};
+};;
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Divs
   const loginDiv = document.getElementById("loginDiv");
   const padreDiv = document.getElementById("padreDiv");
   const transportistaDiv = document.getElementById("transportistaDiv");
-
   const estadoLogin = document.getElementById("estadoLogin");
 
   // LOGIN
@@ -78,15 +75,13 @@
       const userRef = doc(db, "users", uid);
       const snap = await getDoc(userRef);
 
-      let rol;
       if (!snap.exists()) {
-        rol = "padre"; // Por defecto padre
-        await setDoc(userRef, { rol });
-        estadoLogin.innerText = "Usuario creado como PADRE";
-      } else {
-        rol = snap.data().rol;
-        estadoLogin.innerText = "Bienvenido " + rol;
+        estadoLogin.innerText = "Usuario no registrado. Contacta al administrador.";
+        return; // No crea rol automáticamente
       }
+
+      const rol = snap.data().rol;
+      estadoLogin.innerText = "Bienvenido " + rol;
 
       // Mostrar UI según rol
       loginDiv.classList.add("hidden");
@@ -118,7 +113,7 @@
     }
   });
 
-  // TRANSPORTISTA: ver horarios en tiempo real
+  // Transportista: ver horarios en tiempo real
   function cargarHorariosRealtime() {
     const lista = document.getElementById("listaHorarios");
     const colRef = collection(db, "horarios");
