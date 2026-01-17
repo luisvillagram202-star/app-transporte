@@ -2,47 +2,46 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>App Transporte Escolar</title>
+  <title>App Transporte</title>
 </head>
 <body>
 
-<h2>Login</h2>
+<h1>Login Firebase</h1>
 
-<input type="email" id="email" placeholder="Correo"><br><br>
-<input type="password" id="password" placeholder="Contraseña"><br><br>
-
+<input id="email" placeholder="Correo"><br><br>
+<input id="password" type="password" placeholder="Contraseña"><br><br>
 <button id="login">Ingresar</button>
 
-<p id="estado"></p>
+<p id="estado">Esperando acción…</p>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey: "PEGA_AQUI",
-    authDomain: "PEGA_AQUI",
-    projectId: "PEGA_AQUI",
-    appId: "PEGA_AQUI"
-  };
+  apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
+  authDomain: "app-transporte-25487.firebaseapp.com",
+  projectId: "app-transporte-25487",
+  storageBucket: "app-transporte-25487.firebasestorage.app",
+  messagingSenderId: "818710436467",
+  appId: "1:818710436467:web:06fc21171780afca7a6806"
+};
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
   document.getElementById("login").onclick = () => {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-
-    signInWithEmailAndPassword(auth, email, pass)
-      .then(() => {
-        document.getElementById("estado").innerText = "Login correcto";
-      })
-      .catch(e => {
-        document.getElementById("estado").innerText = e.message;
-      });
+    signInWithEmailAndPassword(
+      auth,
+      email.value,
+      password.value
+    )
+    .then(() => estado.innerText = "Login correcto")
+    .catch(e => estado.innerText = e.message);
   };
 </script>
 
 </body>
 </html>
+
 
