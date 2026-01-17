@@ -93,7 +93,7 @@
         padreDiv.classList.remove("hidden");
       } else if (rol === "transportista") {
         transportistaDiv.classList.remove("hidden");
-        cargarHorarios();
+        cargarHorariosRealtime();
       }
 
     } catch (e) {
@@ -118,17 +118,23 @@
   });
 
   // TRANSPORTISTA: ver todos los horarios
-  async function cargarHorarios() {
-    const lista = document.getElementById("listaHorarios");
+  import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+function cargarHorariosRealtime() {
+  const lista = document.getElementById("listaHorarios");
+  const colRef = collection(db, "horarios");
+
+  onSnapshot(colRef, (snapshot) => {
     lista.innerHTML = "";
-    const querySnapshot = await getDocs(collection(db, "horarios"));
-    querySnapshot.forEach((doc) => {
+    snapshot.forEach((doc) => {
       const data = doc.data();
       const li = document.createElement("li");
       li.innerText = `UID: ${doc.id} - Entrada: ${data.entrada}, Salida: ${data.salida}`;
       lista.appendChild(li);
     });
-  }
+  });
+}
+
 </script>
 
 </body>
