@@ -14,11 +14,24 @@
 <button id="loginBtn">Ingresar</button>
 
 <p id="estado">Esperando acción…</p>
+  <hr>
+
+<h2>Horario del estudiante</h2>
+
+<input type="time" id="entrada"><br><br>
+<input type="time" id="salida"><br><br>
+
+<button id="guardarHorario">Guardar horario</button>
+
+<p id="estadoHorario"></p>
+
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 
   const firebaseConfig = {
   apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
@@ -60,7 +73,32 @@
       estado.innerText = e.message;
     }
   });
-</script>
+  const guardarBtn = document.getElementById("guardarHorario");
+const estadoHorario = document.getElementById("estadoHorario");
+
+guardarBtn.addEventListener("click", async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      estadoHorario.innerText = "Debes iniciar sesión primero";
+      return;
+    }
+
+    const entrada = document.getElementById("entrada").value;
+    const salida = document.getElementById("salida").value;
+
+    await setDoc(doc(db, "horarios", user.uid), {
+      entrada,
+      salida
+    });
+
+    estadoHorario.innerText = "Horario guardado correctamente";
+  } catch (e) {
+    estadoHorario.innerText = e.message;
+  }
+});
+
+</script> 
 
 </body>
 </html>
