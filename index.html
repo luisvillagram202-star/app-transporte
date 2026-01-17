@@ -2,143 +2,167 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>App Transporte Escolar</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .hidden { display: none; }
-    input { margin-bottom: 5px; }
-    hr { margin: 20px 0; }
-  </style>
+  <title>Transporte Escolar</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2b7cff">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 </head>
 <body>
 
-<h1>App Transporte Escolar</h1>
+<h2>Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password">
+<button onclick="login()">Ingresar</button>
 
-<!-- LOGIN -->
-<div id="loginDiv">
-  <h2>Login</h2>
-  <input type="email" id="email" placeholder="Correo"><br>
-  <input type="password" id="password" placeholder="Contraseña"><br>
-  <button id="loginBtn">Ingresar</button>
-  <p id="estadoLogin">Esperando acción…</p>
+<hr>
+
+<!-- PADRE -->
+<div id="padre" style="display:none">
+  <h3>Panel Padre</h3>
+
+  <input id="nombreHijo" placeholder="Nombre del hijo"><br><br>
+  <input id="entrada" type="time">
+  <input id="salida" type="time"><br><br>
+
+  <button onclick="guardarHijo()">Agregar hijo</button>
+
+  <h4>Mis hijos</h4>
+  <ul id="listaPadre"></ul>
 </div>
 
-<!-- PADRE: formulario horarios -->
-<div id="padreDiv" class="hidden">
-  <h2>Horario del estudiante</h2>
-  <input type="text" id="nombreHijo" placeholder="Nombre del hijo"><br>
-  <input type="time" id="entrada"><br>
-  <input type="time" id="salida"><br>
-  <button id="guardarHorario">Guardar horario</button>
-  <p id="estadoHorario"></p>
-</div>
-
-<!-- TRANSPORTISTA: ver horarios -->
-<div id="transportistaDiv" class="hidden">
-  <h2>Horarios de todos los estudiantes</h2>
+<!-- TRANSPORTISTA -->
+<div id="transportista" style="display:none">
+  <h3>Panel Transportista</h3>
   <ul id="listaHorarios"></ul>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 🔹 Configura tu Firebase
-  const firebaseConfig = {
-  apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
-  authDomain: "app-transporte-25487.firebaseapp.com",
-  projectId: "app-transporte-25487",
-  storageBucket: "app-transporte-25487.firebasestorage.app",
-  messagingSenderId: "818710436467",
-  appId: "1:818710436467:web:06fc21171780afca7a6806"
+/* === CONFIGURA TUS DATOS === */
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  projectId: "PROJECT_ID"
 };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  // Divs
-  const loginDiv = document.getElementById("loginDiv");
-  const padreDiv = document.getElementById("padreDiv");
-  const transportistaDiv = document.getElementById("transportistaDiv");
-  const estadoLogin = document.getElementById("estadoLogin");
+let usuario;
 
-  // LOGIN
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    estadoLogin.innerText = "Procesando login...";
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+/* ================= LOGIN ================= */
+window.login = async () => {
+  const cred = await signInWithEmailAndPassword(
+    auth,
+    email.value,
+    password.value
+  );
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
+  usuario = cred.user;
 
-      // Revisar rol
-      const userRef = doc(db, "users", uid);
-      const snap = await getDoc(userRef);
-
-      if (!snap.exists()) {
-        estadoLogin.innerText = "Usuario no registrado. Contacta al administrador.";
-        return; // No crea rol automáticamente
-      }
-
-      const rol = snap.data().rol;
-      estadoLogin.innerText = "Bienvenido " + rol;
-
-      // Mostrar UI según rol
-      loginDiv.classList.add("hidden");
-      if (rol === "padre") {
-        padreDiv.classList.remove("hidden");
-      } else if (rol === "transportista") {
-        transportistaDiv.classList.remove("hidden");
-        cargarHorariosRealtime();
-      }
-
-    } catch (e) {
-      estadoLogin.innerText = e.message;
-    }
-  });
-
-  // PADRE: guardar horarios con nombre del hijo
-  document.getElementById("guardarHorario").addEventListener("click", async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const nombreHijo = document.getElementById("nombreHijo").value.trim();
-      const entrada = document.getElementById("entrada").value;
-      const salida = document.getElementById("salida").value;
-
-      if (!nombreHijo) {
-        document.getElementById("estadoHorario").innerText = "Ingresa el nombre del hijo";
-        return;
-      }
-
-      await setDoc(doc(db, "horarios", user.uid), { nombreHijo, entrada, salida });
-      document.getElementById("estadoHorario").innerText = "Horario guardado correctamente";
-
-    } catch (e) {
-      document.getElementById("estadoHorario").innerText = e.message;
-    }
-  });
-
-  // TRANSPORTISTA: ver horarios en tiempo real
-  function cargarHorariosRealtime() {
-    const lista = document.getElementById("listaHorarios");
-    const colRef = collection(db, "horarios");
-
-    onSnapshot(colRef, (snapshot) => {
-      lista.innerHTML = "";
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const li = document.createElement("li");
-        li.innerText = `${data.nombreHijo} - Entrada: ${data.entrada}, Salida: ${data.salida}`;
-        lista.appendChild(li);
-      });
-    });
+  const rolSnap = await getDoc(doc(db, "roles", usuario.uid));
+  if (!rolSnap.exists()) {
+    alert("Usuario sin rol");
+    return;
   }
 
+  const rol = rolSnap.data().rol;
+
+  if (rol === "padre") {
+    padre.style.display = "block";
+    cargarHijosPadre();
+  }
+
+  if (rol === "transportista") {
+    transportista.style.display = "block";
+    cargarHorariosTransportista();
+  }
+};
+
+/* ================= PADRE ================= */
+
+// Agregar hijo
+window.guardarHijo = async () => {
+  await addDoc(
+    collection(db, "horarios", usuario.uid, "hijos"),
+    {
+      nombre: nombreHijo.value,
+      entrada: entrada.value,
+      salida: salida.value,
+      transportistaId: "UID_TRANSPORTISTA",
+      updatedAt: new Date()
+    }
+  );
+
+  nombreHijo.value = "";
+  entrada.value = "";
+  salida.value = "";
+
+  cargarHijosPadre();
+};
+
+// Listar hijos del padre
+async function cargarHijosPadre() {
+  listaPadre.innerHTML = "";
+
+  const hijosSnap = await getDocs(
+    collection(db, "horarios", usuario.uid, "hijos")
+  );
+
+  hijosSnap.forEach(hijo => {
+    const d = hijo.data();
+    listaPadre.innerHTML += `
+      <li>
+        <b>${d.nombre}</b><br>
+        ${d.entrada} - ${d.salida}
+      </li>
+    `;
+  });
+}
+
+/* ================= TRANSPORTISTA ================= */
+
+async function cargarHorariosTransportista() {
+  listaHorarios.innerHTML = "";
+
+  const padresSnap = await getDocs(collection(db, "horarios"));
+
+  for (const padre of padresSnap.docs) {
+    const hijosSnap = await getDocs(
+      collection(db, "horarios", padre.id, "hijos")
+    );
+
+    hijosSnap.forEach(hijo => {
+      const d = hijo.data();
+
+      if (d.transportistaId === usuario.uid) {
+        listaHorarios.innerHTML += `
+          <li>
+            <b>${d.nombre}</b><br>
+            Entrada: ${d.entrada}<br>
+            Salida: ${d.salida}
+          </li>
+        `;
+      }
+    });
+  }
+}
 </script>
 
 </body>
