@@ -8,8 +8,8 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2b7cff">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 </head>
+
 <body>
 
 <h2>Login</h2>
@@ -47,17 +47,19 @@ import {
   getFirestore,
   doc,
   getDoc,
-  setDoc,
   addDoc,
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* === CONFIGURA TUS DATOS === */
+/* ====== TU CONFIGURACIÓN REAL ====== */
 const firebaseConfig = {
-  apiKey: "API_KEY",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  projectId: "PROJECT_ID"
+  apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
+  authDomain: "app-transporte-25487.firebaseapp.com",
+  projectId: "app-transporte-25487",
+  storageBucket: "app-transporte-25487.firebasestorage.app",
+  messagingSenderId: "818710436467",
+  appId: "1:818710436467:web:06fc21171780afca7a6806"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -96,8 +98,6 @@ window.login = async () => {
 };
 
 /* ================= PADRE ================= */
-
-// Agregar hijo
 window.guardarHijo = async () => {
   await addDoc(
     collection(db, "horarios", usuario.uid, "hijos"),
@@ -105,7 +105,10 @@ window.guardarHijo = async () => {
       nombre: nombreHijo.value,
       entrada: entrada.value,
       salida: salida.value,
-      transportistaId: "UID_TRANSPORTISTA",
+
+      // UID REAL DEL TRANSPORTISTA (YA CONFIGURADO)
+      transportistaId: "pJO9Vnn6f6NQuNJ5NYr5Mkg3oDP2",
+
       updatedAt: new Date()
     }
   );
@@ -117,7 +120,6 @@ window.guardarHijo = async () => {
   cargarHijosPadre();
 };
 
-// Listar hijos del padre
 async function cargarHijosPadre() {
   listaPadre.innerHTML = "";
 
@@ -137,7 +139,6 @@ async function cargarHijosPadre() {
 }
 
 /* ================= TRANSPORTISTA ================= */
-
 async function cargarHorariosTransportista() {
   listaHorarios.innerHTML = "";
 
