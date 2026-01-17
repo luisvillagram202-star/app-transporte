@@ -71,30 +71,7 @@
       estado.innerText = e.message;
     }
   });
-  const guardarBtn = document.getElementById("guardarHorario");
-const estadoHorario = document.getElementById("estadoHorario");
-
-guardarBtn.addEventListener("click", async () => {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      estadoHorario.innerText = "Debes iniciar sesión primero";
-      return;
-    }
-
-    const entrada = document.getElementById("entrada").value;
-    const salida = document.getElementById("salida").value;
-
-    await setDoc(doc(db, "horarios", user.uid), {
-      entrada,
-      salida
-    });
-
-    estadoHorario.innerText = "Horario guardado correctamente";
-  } catch (e) {
-    estadoHorario.innerText = e.message;
-  }
-});
+  
 
 </script>
 
