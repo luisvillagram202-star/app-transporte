@@ -36,7 +36,11 @@
       email.value,
       password.value
     )
-    .then(() => estado.innerText = "Login correcto")
+   .then(async (userCredential) => {
+  const uid = userCredential.user.uid;
+  estado.innerText = "Login correcto. UID: " + uid;
+})
+
     .catch(e => estado.innerText = e.message);
   };
 </script>
