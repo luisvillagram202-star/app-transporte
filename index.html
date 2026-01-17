@@ -23,11 +23,27 @@
 
 <button id="guardarHorario">Guardar horario</button>
 
-<p id="estadoHorario"></p>
-  <div id="panelTransportista" style="display:none">
+<!-- PANEL PADRE -->
+<div id="horarioPadre">
+  <h3>Horario del estudiante</h3>
+
+  <label>Hora de entrada</label><br>
+  <input type="time" id="entrada"><br><br>
+
+  <label>Hora de salida</label><br>
+  <input type="time" id="salida"><br><br>
+
+  <button id="guardarHorario">Guardar horario</button>
+
+  <p id="estadoHorario"></p>
+</div>
+
+<!-- PANEL TRANSPORTISTA -->
+<div id="panelTransportista" style="display:none">
   <h3>Horarios de estudiantes</h3>
   <ul id="listaHorarios"></ul>
 </div>
+
 
 
 
