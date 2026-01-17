@@ -101,6 +101,39 @@ guardarBtn.addEventListener("click", async () => {
     estadoHorario.innerText = e.message;
   }
 });
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const horarioPadre = document.getElementById("horarioPadre");
+const panelTransportista = document.getElementById("panelTransportista");
+const listaHorarios = document.getElementById("listaHorarios");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+
+  // OCULTAR TODO
+  horarioPadre.style.display = "none";
+  panelTransportista.style.display = "none";
+
+  if (userDoc.exists() && userDoc.data().rol === "transportista") {
+    panelTransportista.style.display = "block";
+
+    onSnapshot(collection(db, "horarios"), (snapshot) => {
+      listaHorarios.innerHTML = "";
+      snapshot.forEach(d => {
+        const h = d.data();
+        listaHorarios.innerHTML += `
+          <li>Entrada: ${h.entrada} | Salida: ${h.salida}</li>
+        `;
+      });
+    });
+
+  } else {
+    horarioPadre.style.display = "block";
+  }
+});
 
 </script>
 
