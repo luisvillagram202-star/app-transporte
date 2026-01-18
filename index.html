@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Transporte Escolar</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2b7cff">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +17,13 @@
 <button onclick="login()">Ingresar</button>
 
 <hr>
+
+<!-- SELECCIÓN DE MODO -->
+<div id="modo" style="display:none">
+  <h3>¿Cómo deseas ingresar?</h3>
+  <button onclick="modoPadre()">Padre</button>
+  <button onclick="modoTransportista()">Transportista</button>
+</div>
 
 <!-- PADRE -->
 <div id="padre" style="display:none">
@@ -40,19 +46,16 @@
 </div>
 
 <script type="module">
-/* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import {
   getFirestore,
-  doc,
-  getDoc,
   addDoc,
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ====== TU CONFIGURACIÓN REAL ====== */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyA9DvyiDMZnncv3wUPCaDrzuUHcAV0UKCw",
   authDomain: "app-transporte-25487.firebaseapp.com",
@@ -68,7 +71,7 @@ const db = getFirestore(app);
 
 let usuario;
 
-/* ================= LOGIN ================= */
+/* LOGIN */
 window.login = async () => {
   const cred = await signInWithEmailAndPassword(
     auth,
@@ -77,39 +80,31 @@ window.login = async () => {
   );
 
   usuario = cred.user;
-
-  const rolSnap = await getDoc(doc(db, "roles", usuario.uid));
-  if (!rolSnap.exists()) {
-    alert("Usuario sin rol");
-    return;
-  }
-
-  const rol = rolSnap.data().rol;
-
-  if (rol === "padre") {
-    padre.style.display = "block";
-    cargarHijosPadre();
-  }
-
-  if (rol === "transportista") {
-    transportista.style.display = "block";
-    cargarHorariosTransportista();
-  }
+  modo.style.display = "block";
 };
 
-/* ================= PADRE ================= */
+/* MODO */
+window.modoPadre = () => {
+  modo.style.display = "none";
+  padre.style.display = "block";
+  cargarHijosPadre();
+};
+
+window.modoTransportista = () => {
+  modo.style.display = "none";
+  transportista.style.display = "block";
+  cargarHorariosTransportista();
+};
+
+/* PADRE */
 window.guardarHijo = async () => {
   await addDoc(
-    collection(db, "horarios", usuario.uid, "hijos"),
+    collection(db, "horarios"),
     {
       nombre: nombreHijo.value,
       entrada: entrada.value,
       salida: salida.value,
-
-      // UID REAL DEL TRANSPORTISTA (YA CONFIGURADO)
-      transportistaId: "pJO9Vnn6f6NQuNJ5NYr5Mkg3oDP2",
-
-      updatedAt: new Date()
+      createdAt: new Date()
     }
   );
 
@@ -122,13 +117,10 @@ window.guardarHijo = async () => {
 
 async function cargarHijosPadre() {
   listaPadre.innerHTML = "";
+  const snap = await getDocs(collection(db, "horarios"));
 
-  const hijosSnap = await getDocs(
-    collection(db, "horarios", usuario.uid, "hijos")
-  );
-
-  hijosSnap.forEach(hijo => {
-    const d = hijo.data();
+  snap.forEach(doc => {
+    const d = doc.data();
     listaPadre.innerHTML += `
       <li>
         <b>${d.nombre}</b><br>
@@ -138,33 +130,23 @@ async function cargarHijosPadre() {
   });
 }
 
-/* ================= TRANSPORTISTA ================= */
+/* TRANSPORTISTA */
 async function cargarHorariosTransportista() {
   listaHorarios.innerHTML = "";
+  const snap = await getDocs(collection(db, "horarios"));
 
-  const padresSnap = await getDocs(collection(db, "horarios"));
-
-  for (const padre of padresSnap.docs) {
-    const hijosSnap = await getDocs(
-      collection(db, "horarios", padre.id, "hijos")
-    );
-
-    hijosSnap.forEach(hijo => {
-      const d = hijo.data();
-
-      if (d.transportistaId === usuario.uid) {
-        listaHorarios.innerHTML += `
-          <li>
-            <b>${d.nombre}</b><br>
-            Entrada: ${d.entrada}<br>
-            Salida: ${d.salida}
-          </li>
-        `;
-      }
-    });
-  }
+  snap.forEach(doc => {
+    const d = doc.data();
+    listaHorarios.innerHTML += `
+      <li>
+        <b>${d.nombre}</b><br>
+        Entrada: ${d.entrada}<br>
+        Salida: ${d.salida}
+      </li>
+    `;
+  });
 }
 </script>
 
 </body>
-</html
+</html>
